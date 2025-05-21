@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    environment:
+      - REACT_APP_API_URL=http://nginx-proxy
+    networks:
+      - app-net
+
+  backend:
+    build: ./backend
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/mydb
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - db
+    networks:
+      - app-net
+
+  db:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=mydb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-net
+
+volumes:
+  db_data:
+
+networks:
+  app-net:
